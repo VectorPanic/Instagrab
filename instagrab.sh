@@ -3,6 +3,7 @@
 clear;
 
 USR=${1:-"henkelunchar"};
+SRC="users/$USR";
 
 EXIT_CODE=0;
 
@@ -23,10 +24,10 @@ then
     echo -e "Looking for new content of \033[1m$USR\033[0m, please wait...";
     echo "";
 
-    mkdir -p "$USR";
-    cd "$USR";
+    mkdir -p "$SRC";
+    cd "$SRC";
 
-    RESPONSE=$(curl -s "https://www.instagram.com/$USR/?__a=1");
+    RESPONSE=$(curl -s "https://www.instagram.com/$USR/?__a=1" 2>/dev/null);
     RESPONSE=$(echo $RESPONSE | egrep -o '"shortcode":"(.*?)"');
     RESPONSE=$(echo $RESPONSE | egrep -o '".*"');
     RESPONSE=$(echo $RESPONSE | sed 's/"//g');
@@ -36,11 +37,11 @@ then
     if [ ! -z "$RESPONSE" ]
     then
         while read SHORT;
-        do
+        do  
             #
             # Fetch video
             #
-            MEDIA=$(curl -s "https://www.instagram.com/p/$SHORT/?__a=1");
+            MEDIA=$(curl -s "https://www.instagram.com/p/$SHORT/?__a=1" 2>/dev/null);
             if [[ $MEDIA =~ '"is_video":true,"' ]]
             then
 
@@ -50,14 +51,15 @@ then
                 if [ ! -f $VIDEO_FILE ]
                 then
 
-                    NUM_VIDS_PASS=$((NUM_VIDS_PASS+1));
-
                     echo -en "\033[1m\033[43m  RUNS  \033[0m";
-                    echo -e  " \033[2m$USR/\033[0m$(basename "$VIDEO_FILE")\033[0m";
+                    echo -e  " \033[2m$SRC/\033[0m$(basename "$VIDEO_FILE")\033[0m";
 
-                    EXEC=$(curl -s -L -o "$VIDEO_FILE" $VIDEO_PATH 2>&1);
+                    #
+                    # Avoid stress (sleep between 1 - 5 seconds)
+                    #
+                    sleep $(seq 1 5 | sort -R | head -n 1);
 
-                    if [ -z "$EXEC" ]
+                    if curl -sLf -o "$VIDEO_FILE" "$VIDEO_PATH" 2>/dev/null;
                     then
                         echo -en "\033[1A";
                         echo -en "\033[1m\033[42m  PASS  \033[0m";
@@ -71,6 +73,8 @@ then
                         echo -en "\033[8D";
                         echo -en "\033[1B";
 
+                        echo "$VIDEO_PATH" >> ./error.log;
+
                         NUM_VIDS_FAIL=$((NUM_VIDS_FAIL+1));
                         EXIT_CODE=1;
                     fi
@@ -78,39 +82,47 @@ then
             fi
 
             #
-            # Fetch picture
+            # Fetch pictures
             #
-            IMAGE_PATH=$(echo $MEDIA | egrep -o '"display_url":"(.*?)"');
-            IMAGE_PATH=$(echo $IMAGE_PATH | egrep -o '"http(s{0,1})://(.*?)"');
-            IMAGE_PATH=$(echo $IMAGE_PATH | sed 's/\"//g');
-            IMAGE_FILE=$(basename "$IMAGE_PATH" | cut -d'?' -f1);
+            IMAGE_PATHS=$(echo $MEDIA | egrep -o '"display_url":"(.*?)"');
+            IMAGE_PATHS=$(echo $IMAGE_PATHS | egrep -o '"http(s{0,1})://(.*?)"');
+            IMAGE_PATHS=$(echo $IMAGE_PATHS | sed 's/\"//g');
 
-            if [ ! -f $IMAGE_FILE ]
-            then
+            for IMAGE_PATH in $IMAGE_PATHS
+            do
+                IMAGE_FILE=$(basename "$IMAGE_PATH" | cut -d'?' -f1);
 
-                echo -en "\033[1m\033[43m  RUNS  \033[0m";
-                echo -e  " \033[2m$USR/\033[0m$(basename "$IMAGE_FILE")\033[0m";
-
-                EXEC=$(curl -s -L -o "$IMAGE_FILE" $IMAGE_PATH 2>&1);
-
-                if [ -z "$EXEC" ]
+                if [ ! -f $IMAGE_FILE ];
                 then
-                    echo -en "\033[1A";
-                    echo -en "\033[1m\033[42m  PASS  \033[0m";
-                    echo -en "\033[8D";
-                    echo -en "\033[1B";
 
-                    NUM_PICS_PASS=$((NUM_PICS_PASS+1));
-                else
-                    echo -en "\033[1A";
-                    echo -en "\a\033[1m\033[101m  FAIL  \033[0m";
-                    echo -en "\033[8D";
-                    echo -en "\033[1B";
+                    echo -en "\033[1m\033[43m  RUNS  \033[0m";
+                    echo -e  " \033[2m$SRC/$IMAGE_FILE\033[0m$Y\033[0m";
 
-                    NUM_PICS_FAIL=$((NUM_PICS_FAIL+1));
-                    EXIT_CODE=1;
+                    #
+                    # Avoid stress (sleep between 1 - 5 seconds)
+                    #
+                    sleep $(seq 1 5 | sort -R | head -n 1);
+                    if curl -sLf -o "$IMAGE_FILE" "$IMAGE_PATH" 2>/dev/null;
+                    then
+                        echo -en "\033[1A";
+                        echo -en "\033[1m\033[42m  PASS  \033[0m";
+                        echo -en "\033[8D";
+                        echo -en "\033[1B";
+
+                        NUM_PICS_PASS=$((NUM_PICS_PASS+1));
+                    else
+                        echo -en "\033[1A";
+                        echo -en "\a\033[1m\033[101m  FAIL  \033[0m";
+                        echo -en "\033[8D";
+                        echo -en "\033[1B";
+
+                        echo "$IMAGE_PATH" >> ./error.log;
+
+                        NUM_PICS_FAIL=$((NUM_PICS_FAIL+1));
+                        EXIT_CODE=1;
+                    fi
                 fi
-            fi
+            done
         done <<< "$RESPONSE";
 
         if [ $(($NUM_PICS_PASS + $NUM_PICS_FAIL + $NUM_VIDS_PASS + $NUM_VIDS_FAIL)) -eq 0 ]
