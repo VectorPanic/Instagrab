@@ -96,7 +96,7 @@ then
                 then
 
                     echo -en "\033[1m\033[43m  RUNS  \033[0m";
-                    echo -e  " \033[2m$SRC/$IMAGE_FILE\033[0m$Y\033[0m";
+                    echo -e  " \033[2m$SRC/\033[0m$(basename "$IMAGE_FILE")\033[0m";
 
                     #
                     # Avoid stress (sleep between 1 - 5 seconds)
