@@ -2,7 +2,7 @@
   
 A shell script that retrieves multimedia content from user profiles on Instagram. The script uses a Jest-like interface and is easy to use. The script has been tested under macOS but should also work during most Linux distributions.
 
-![screenshot](https://drive.google.com/open?id=1pC-Y-VzL7kGRBW_uqs8kVgAHDnjffyyO)
+![screenshot](https://drive.google.com/uc?id=1pC-Y-VzL7kGRBW_uqs8kVgAHDnjffyyO)
 
 ## How to use
 
