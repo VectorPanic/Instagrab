@@ -57,7 +57,7 @@ then
                     #
                     # Avoid stress (sleep between 1 - 5 seconds)
                     #
-                    sleep $(seq 1 5 | sort -R | head -n 1);
+                    sleep $(( $RANDOM % 5 + 1 ));
 
                     if curl -sLf -o "$VIDEO_FILE" "$VIDEO_PATH" 2>/dev/null;
                     then
@@ -101,7 +101,8 @@ then
                     #
                     # Avoid stress (sleep between 1 - 5 seconds)
                     #
-                    sleep $(seq 1 5 | sort -R | head -n 1);
+                    sleep $(( $RANDOM % 5 + 1 ));
+                    
                     if curl -sLf -o "$IMAGE_FILE" "$IMAGE_PATH" 2>/dev/null;
                     then
                         echo -en "\033[1A";
