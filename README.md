@@ -4,6 +4,13 @@ A shell script that retrieves multimedia content from user profiles on Instagram
 
 ![screenshot](https://drive.google.com/uc?id=1pC-Y-VzL7kGRBW_uqs8kVgAHDnjffyyO)
 
+Instagrab has been tested on the following platforms:
+
+* MacOS 10.14 (Mojave)
+* Mac OS X 10.11.6 (El Capitan)
+* Mac OS X 10.7.5 (Lion)
+* Raspbian 10 (Buster)
+
 ## How to use
 
 Instagrab can be used to retrieve multimedia content from a specific user, or download content from multiple users at once.

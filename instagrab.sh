@@ -155,6 +155,7 @@ then
     echo -e "";
 
 else
+    echo "Please install cURL and try again.";
     EXIT_CODE=1;
 fi
 
