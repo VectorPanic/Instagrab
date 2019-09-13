@@ -1,5 +1,17 @@
 #!/bin/bash
 
+#
+# Support LAZY searches both on BSD and GNU
+#
+if grep -V | grep -q "BSD";
+then
+    # BSD version (Extended Regular Expressions)
+    GREP_FLAG="-E";
+else
+    # GNU version (Perl Compatible Regular Expressions)
+    GREP_FLAG="-P";
+fi
+
 clear;
 
 USR=${1:-"henkelunchar"};
@@ -28,8 +40,8 @@ then
     cd "$SRC";
 
     RESPONSE=$(curl -s "https://www.instagram.com/$USR/?__a=1" 2>/dev/null);
-    RESPONSE=$(echo $RESPONSE | egrep -o '"shortcode":"(.*?)"');
-    RESPONSE=$(echo $RESPONSE | egrep -o '".*"');
+    RESPONSE=$(echo $RESPONSE | grep $GREP_FLAG -o '"shortcode":"(.*?)"');
+    RESPONSE=$(echo $RESPONSE | grep $GREP_FLAG -o '".*"');
     RESPONSE=$(echo $RESPONSE | sed 's/"//g');
     RESPONSE=$(echo $RESPONSE | sed 's/shortcode://g');
     RESPONSE=$(echo $RESPONSE | tr " " "\n");
@@ -84,8 +96,8 @@ then
             #
             # Fetch pictures
             #
-            IMAGE_PATHS=$(echo $MEDIA | egrep -o '"display_url":"(.*?)"');
-            IMAGE_PATHS=$(echo $IMAGE_PATHS | egrep -o '"http(s{0,1})://(.*?)"');
+            IMAGE_PATHS=$(echo $MEDIA | grep $GREP_FLAG -o '"display_url":"(.*?)"');
+            IMAGE_PATHS=$(echo $IMAGE_PATHS | grep $GREP_FLAG -o '"http(s{0,1})://(.*?)"');
             IMAGE_PATHS=$(echo $IMAGE_PATHS | sed 's/\"//g');
 
             for IMAGE_PATH in $IMAGE_PATHS
