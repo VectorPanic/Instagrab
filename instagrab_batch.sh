@@ -4,6 +4,7 @@ clear;
 
 SRC=${1:-""};
 PRE=${2:-""};
+LST=${3:-"users.txt"};
 
 EXIT_CODE=0;
 
@@ -38,7 +39,7 @@ do
         echo -en "\033[1B";
         EXIT_CODE=1;
     fi
-done < users.txt
+done < $LST
 
 DURATION=$(($SECONDS - $TIMESTAMP_START));
 
