@@ -2,31 +2,57 @@
 
 clear;
 
-SRC=${1:-""};
-PRE=${2:-""};
-LST=${3:-"users.txt"};
-
 EXIT_CODE=0;
 
+C='cache.log';
+D='users/%U%';
+L='users.txt';
+N='%N%';
+
+print_usage() {
+  echo "usage: Instagrab_batch [-c] [-d] [-h] [-l] [-n]"
+  echo " "
+  echo "options:"
+  echo "-c, Cache file"
+  echo "-d, Destination path"
+  echo "-h, Help"
+  echo "-l, List of users"
+  echo "-n, Filename"
+  echo " "
+  exit 0
+}
+
+while getopts 'c:d:h:l:n:' flag; do
+  case "${flag}" in
+    c) C="${OPTARG}" ;;
+    d) D="${OPTARG}" ;;
+    h) print_usage ;;
+    l) L="${OPTARG}" ;;
+    n) N="${OPTARG}" ;;
+    *) print_usage
+       exit 1 ;;
+  esac
+done
+
 echo "";
-echo -e "\033[1m[ INSTAGRAB BATCH ]\033[0m\033[2m[ Grab content from Instagram ] 1.0.0\033[0m";
+echo -e "\033[1m[ INSTAGRAB BATCH ]\033[0m\033[2m[ Grab content from Instagram ] 2.0.0\033[0m";
 echo "";
 
 TIMESTAMP_START=$SECONDS;
 NUM_USERS=0;
 
-while IFS= read -r USR || [ -n "$USR" ];
+touch "$L";
+
+while IFS= read -r U || [ -n "$U" ];
 do
     NUM_USERS=$((NUM_USERS+1));
 
     echo -en "\033[1m\033[43m  RUNS  \033[0m";
-    echo -e  " \033[2mGrabbing: \033[0m$USR\033[0m";
-
-    DIR=${SRC:-"users/$USR"};
+    echo -e  " \033[2mGrabbing: \033[0m$U\033[0m";
     
-    EXEC=$(./instagrab.sh $USR $DIR $PRE);
+    EXEC=$(./instagrab.sh -c "$C" -d "$D" -n "$N" -u $U);
 
-    if [ "$#" -eq 0 ]
+    if [ "$?" -eq 0 ]
     then
         echo -en "\033[1A";
         echo -en "\033[1m\033[42m  PASS  \033[0m";
@@ -39,7 +65,7 @@ do
         echo -en "\033[1B";
         EXIT_CODE=1;
     fi
-done < $LST
+done < $L
 
 DURATION=$(($SECONDS - $TIMESTAMP_START));
 

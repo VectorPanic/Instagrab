@@ -9,7 +9,6 @@ Instagrab has been tested on the following platforms:
 * MacOS 10.14 (Mojave)
 * Mac OS X 10.11.6 (El Capitan)
 * Mac OS X 10.7.5 (Lion)
-* Raspbian 10 (Buster)
 
 ## How to use
 
@@ -20,7 +19,7 @@ Instagrab can be used to retrieve multimedia content from a specific user, or do
 The following example downloads all content from the user *[henkelunchar](https://www.instagram.com/henkelunchar/?hl=en)* and saves it in a folder of the same name.
 
 ```console
-./instagrab.sh henkelunchar
+./instagrab.sh -u henkelunchar
 ```
 
 ### Milti user download

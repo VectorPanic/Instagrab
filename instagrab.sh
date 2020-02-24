@@ -1,27 +1,41 @@
 #!/bin/bash
 
-#
-# Support LAZY searches both on BSD and GNU
-#
-if grep -V | grep -q "BSD";
-then
-    # BSD version (Extended Regular Expressions)
-    GREP_FLAG="-E";
-else
-    # GNU version (Perl Compatible Regular Expressions)
-    GREP_FLAG="-P";
-fi
-
 clear;
-
-USR=${1:-"henkelunchar"};
-SRC=${2:-"users/$USR"};
-PRE=${3:-""};
 
 EXIT_CODE=0;
 
+C='cache.log';
+D='users/%U%';
+N='%N%';
+U='henkelunchar';
+
+print_usage() {
+  echo "usage: Instagrab [-c] [-d] [-h] [-n] [-u]"
+  echo " "
+  echo "options:"
+  echo "-c, Cache file"
+  echo "-d, Destination path"
+  echo "-h, Help"
+  echo "-n, Filename"
+  echo "-u, User"
+  echo " "
+  exit 0
+}
+
+while getopts 'c:d:h:n:u:' flag; do
+  case "${flag}" in
+    c) C="${OPTARG}" ;;
+    d) D="${OPTARG}" ;;
+    h) print_usage ;;
+    n) N="${OPTARG}" ;;
+    u) U="${OPTARG}" ;;
+    *) print_usage
+       exit 1 ;;
+  esac
+done
+
 echo "";
-echo -e "\033[1m[ INSTAGRAB ]\033[0m\033[2m[ Grab content from Instagram ] 1.0.0\033[0m";
+echo -e "\033[1m[ INSTAGRAB ]\033[0m\033[2m[ Grab content from Instagram ] 2.0.0\033[0m";
 echo "";
 
 if [ $EXIT_CODE == 0 ] || [ command -v curl >/dev/null 2>&1 ];
@@ -33,17 +47,20 @@ then
     NUM_PICS_FAIL=0;
     NUM_VIDS_PASS=0;
     NUM_VIDS_FAIL=0;
-    
-    echo -e "Looking for new content of \033[1m$USR\033[0m, please wait...";
+
+    echo -e "Looking for new content of \033[1m$U\033[0m, please wait...";
     echo "";
 
-    mkdir -p "$SRC";
-    cd "$SRC";
-    touch cache.log;
+    D=$(echo $D | sed "s/%U%/$U/g");
+    C=$(echo $C | sed "s/%U%/$U/g");
 
-    RESPONSE=$(curl -s "https://www.instagram.com/$USR/?__a=1" 2>/dev/null);
-    RESPONSE=$(echo $RESPONSE | grep $GREP_FLAG -o '"shortcode":"(.*?)"');
-    RESPONSE=$(echo $RESPONSE | grep $GREP_FLAG -o '".*"');
+    mkdir -p "$D";
+    cd "$D";
+    touch "$C";
+
+    RESPONSE=$(curl -s "https://www.instagram.com/$U/?__a=1" 2>/dev/null);
+    RESPONSE=$(echo $RESPONSE | grep -E -o '"shortcode":"(.*?)"');
+    RESPONSE=$(echo $RESPONSE | grep -E -o '".*"');
     RESPONSE=$(echo $RESPONSE | sed 's/"//g');
     RESPONSE=$(echo $RESPONSE | sed 's/shortcode://g');
     RESPONSE=$(echo $RESPONSE | tr " " "\n");
@@ -51,7 +68,7 @@ then
     if [ ! -z "$RESPONSE" ]
     then
         while read SHORT;
-        do  
+        do
             #
             # Fetch video
             #
@@ -62,7 +79,7 @@ then
                 VIDEO_PATH=$(echo $MEDIA | sed -e 's/.*video_url":"//g' -e 's/".*//g');
                 VIDEO_FILE=$(basename "$VIDEO_PATH" | cut -d'?' -f1);
 
-                if ! grep -q "^$VIDEO_FILE" cache.log;
+                if ! grep -q "^$VIDEO_FILE" "$C";
                 then
 
                     echo -en "\033[1m\033[43m  RUNS  \033[0m";
@@ -73,14 +90,17 @@ then
                     #
                     sleep $(( $RANDOM % 5 + 1 ));
 
-                    if curl -sLf -o "$VIDEO_FILE" "$VIDEO_PATH" 2>/dev/null;
+                    VIDEO_FILE_NAME=$(echo $N | sed "s/%N%/$VIDEO_FILE/g");
+                    VIDEO_FILE_NAME=$(echo $VIDEO_FILE_NAME | sed "s/%U%/$U/g");
+
+                    if curl -sLf -o "$VIDEO_FILE_NAME" "$VIDEO_PATH" 2>/dev/null;
                     then
                         echo -en "\033[1A";
                         echo -en "\033[1m\033[42m  PASS  \033[0m";
                         echo -en "\033[8D";
                         echo -en "\033[1B";
 
-                        echo "$VIDEO_FILE" >> ./cache.log;
+                        echo "$VIDEO_FILE" >> "$C";
 
                         NUM_VIDS_PASS=$((NUM_VIDS_PASS+1));
                     else
@@ -89,7 +109,7 @@ then
                         echo -en "\033[8D";
                         echo -en "\033[1B";
 
-                        echo "$VIDEO_PATH" >> ./error.log;
+                        echo "$VIDEO_PATH" >> ./error.log; #TODO: ...
 
                         NUM_VIDS_FAIL=$((NUM_VIDS_FAIL+1));
                         EXIT_CODE=1;
@@ -100,15 +120,15 @@ then
             #
             # Fetch pictures
             #
-            IMAGE_PATHS=$(echo $MEDIA | grep $GREP_FLAG -o '"display_url":"(.*?)"');
-            IMAGE_PATHS=$(echo $IMAGE_PATHS | grep $GREP_FLAG -o '"http(s{0,1})://(.*?)"');
+            IMAGE_PATHS=$(echo $MEDIA | grep -E -o '"display_url":"(.*?)"');
+            IMAGE_PATHS=$(echo $IMAGE_PATHS | grep -E -o '"http(s{0,1})://(.*?)"');
             IMAGE_PATHS=$(echo $IMAGE_PATHS | sed 's/\"//g');
 
             for IMAGE_PATH in $IMAGE_PATHS
             do
                 IMAGE_FILE=$(basename "$IMAGE_PATH" | cut -d'?' -f1);
 
-                if ! grep -q "^$IMAGE_FILE" cache.log;
+                if ! grep -q "^$IMAGE_FILE" "$C";
                 then
 
                     echo -en "\033[1m\033[43m  RUNS  \033[0m";
@@ -118,15 +138,18 @@ then
                     # Avoid stress (sleep between 1 - 5 seconds)
                     #
                     sleep $(( $RANDOM % 5 + 1 ));
+
+                    IMAGE_FILE_NAME=$(echo $N | sed "s/%N%/$IMAGE_FILE/g");
+                    IMAGE_FILE_NAME=$(echo $IMAGE_FILE_NAME | sed "s/%U%/$U/g");
                     
-                    if curl -sLf -o "$PRE$IMAGE_FILE" "$IMAGE_PATH" 2>/dev/null;
+                    if curl -sLf -o "$IMAGE_FILE_NAME" "$IMAGE_PATH" 2>/dev/null;
                     then
                         echo -en "\033[1A";
                         echo -en "\033[1m\033[42m  PASS  \033[0m";
                         echo -en "\033[8D";
                         echo -en "\033[1B";
 
-                        echo "$IMAGE_FILE" >> ./cache.log;
+                        echo "$IMAGE_FILE" >> "$C";
 
                         NUM_PICS_PASS=$((NUM_PICS_PASS+1));
                     else
@@ -135,7 +158,7 @@ then
                         echo -en "\033[8D";
                         echo -en "\033[1B";
 
-                        echo "$IMAGE_PATH" >> ./error.log;
+                        echo "$IMAGE_PATH" >> ./error.log; #TODO: ...
 
                         NUM_PICS_FAIL=$((NUM_PICS_FAIL+1));
                         EXIT_CODE=1;
@@ -146,23 +169,19 @@ then
 
         if [ $(($NUM_PICS_PASS + $NUM_PICS_FAIL + $NUM_VIDS_PASS + $NUM_VIDS_FAIL)) -eq 0 ]
         then
-            echo -e "\033[1m\033[104m  Nothing new by $USR  \033[0m";
+            echo -e "\033[1m\033[104m  Nothing new by $U  \033[0m";
         fi
+
+        cd - > /dev/null
+
+        DURATION=$(($SECONDS - $TIMESTAMP_START));
+
+        echo -e "";
+        echo -e "\033[1mNumber of Pictures:\033[0m\t$NUM_PICS_PASS\033[2m/$(($NUM_PICS_PASS + $NUM_PICS_FAIL))\033[0m";
+        echo -e "\033[1mNumber of Videos:\033[0m\t$NUM_VIDS_PASS\033[2m/$(($NUM_VIDS_PASS + $NUM_VIDS_FAIL))\033[0m";
+        echo -e "\033[1mDuration:\033[0m\t\t$DURATION seconds";
+        echo -e "";
     fi
-
-    cd - > /dev/null
-
-    DURATION=$(($SECONDS - $TIMESTAMP_START));
-
-    echo -e "";
-    echo -e "\033[1mNumber of Pictures:\033[0m\t$NUM_PICS_PASS\033[2m/$(($NUM_PICS_PASS + $NUM_PICS_FAIL))\033[0m";
-    echo -e "\033[1mNumber of Videos:\033[0m\t$NUM_VIDS_PASS\033[2m/$(($NUM_VIDS_PASS + $NUM_VIDS_FAIL))\033[0m";
-    echo -e "\033[1mDuration:\033[0m\t\t$DURATION seconds";
-    echo -e "";
-
-else
-    echo "Please install cURL and try again.";
-    EXIT_CODE=1;
 fi
 
 exit $EXIT_CODE;
