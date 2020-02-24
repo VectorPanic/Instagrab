@@ -2,6 +2,9 @@
 
 clear;
 
+SRC=${1:-""};
+PRE=${2:-""};
+
 EXIT_CODE=0;
 
 echo "";
@@ -18,7 +21,9 @@ do
     echo -en "\033[1m\033[43m  RUNS  \033[0m";
     echo -e  " \033[2mGrabbing: \033[0m$USR\033[0m";
 
-    EXEC=$(./instagrab.sh $USR);
+    DIR=${SRC:-"users/$USR"};
+    
+    EXEC=$(./instagrab.sh $USR $DIR $PRE);
 
     if [ "$#" -eq 0 ]
     then

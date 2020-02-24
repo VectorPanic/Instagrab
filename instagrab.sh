@@ -15,7 +15,8 @@ fi
 clear;
 
 USR=${1:-"henkelunchar"};
-SRC="users/$USR";
+SRC=${2:-"users/$USR"};
+PRE=${3:-""};
 
 EXIT_CODE=0;
 
@@ -38,6 +39,7 @@ then
 
     mkdir -p "$SRC";
     cd "$SRC";
+    touch cache.log;
 
     RESPONSE=$(curl -s "https://www.instagram.com/$USR/?__a=1" 2>/dev/null);
     RESPONSE=$(echo $RESPONSE | grep $GREP_FLAG -o '"shortcode":"(.*?)"');
@@ -60,7 +62,7 @@ then
                 VIDEO_PATH=$(echo $MEDIA | sed -e 's/.*video_url":"//g' -e 's/".*//g');
                 VIDEO_FILE=$(basename "$VIDEO_PATH" | cut -d'?' -f1);
 
-                if [ ! -f $VIDEO_FILE ]
+                if ! grep -q "^$VIDEO_FILE" cache.log;
                 then
 
                     echo -en "\033[1m\033[43m  RUNS  \033[0m";
@@ -77,6 +79,8 @@ then
                         echo -en "\033[1m\033[42m  PASS  \033[0m";
                         echo -en "\033[8D";
                         echo -en "\033[1B";
+
+                        echo "$VIDEO_FILE" >> ./cache.log;
 
                         NUM_VIDS_PASS=$((NUM_VIDS_PASS+1));
                     else
@@ -104,7 +108,7 @@ then
             do
                 IMAGE_FILE=$(basename "$IMAGE_PATH" | cut -d'?' -f1);
 
-                if [ ! -f $IMAGE_FILE ];
+                if ! grep -q "^$IMAGE_FILE" cache.log;
                 then
 
                     echo -en "\033[1m\033[43m  RUNS  \033[0m";
@@ -115,12 +119,14 @@ then
                     #
                     sleep $(( $RANDOM % 5 + 1 ));
                     
-                    if curl -sLf -o "$IMAGE_FILE" "$IMAGE_PATH" 2>/dev/null;
+                    if curl -sLf -o "$PRE$IMAGE_FILE" "$IMAGE_PATH" 2>/dev/null;
                     then
                         echo -en "\033[1A";
                         echo -en "\033[1m\033[42m  PASS  \033[0m";
                         echo -en "\033[8D";
                         echo -en "\033[1B";
+
+                        echo "$IMAGE_FILE" >> ./cache.log;
 
                         NUM_PICS_PASS=$((NUM_PICS_PASS+1));
                     else
