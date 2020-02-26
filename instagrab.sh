@@ -83,7 +83,7 @@ then
                 then
 
                     echo -en "\033[1m\033[43m  RUNS  \033[0m";
-                    echo -e  " \033[2m$SRC/\033[0m$(basename "$VIDEO_FILE")\033[0m";
+                    echo -e  " \033[2m$D/\033[0m$(basename "$VIDEO_FILE")\033[0m";
 
                     #
                     # Avoid stress (sleep between 1 - 5 seconds)
@@ -100,7 +100,7 @@ then
                         echo -en "\033[8D";
                         echo -en "\033[1B";
 
-                        echo "$VIDEO_FILE" >> "$C";
+                        echo "$VIDEO_PATH" >> "$C";
 
                         NUM_VIDS_PASS=$((NUM_VIDS_PASS+1));
                     else
@@ -132,7 +132,7 @@ then
                 then
 
                     echo -en "\033[1m\033[43m  RUNS  \033[0m";
-                    echo -e  " \033[2m$SRC/\033[0m$(basename "$IMAGE_FILE")\033[0m";
+                    echo -e  " \033[2m$D/\033[0m$(basename "$IMAGE_FILE")\033[0m";
 
                     #
                     # Avoid stress (sleep between 1 - 5 seconds)
@@ -149,7 +149,7 @@ then
                         echo -en "\033[8D";
                         echo -en "\033[1B";
 
-                        echo "$IMAGE_FILE" >> "$C";
+                        echo "$IMAGE_PATH" >> "$C";
 
                         NUM_PICS_PASS=$((NUM_PICS_PASS+1));
                     else
